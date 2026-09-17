@@ -32,3 +32,4 @@ pypdf==4.3.1
 # may comment these two lines out if you only need PDF support.
 Pillow==10.4.0
 pytesseract==0.3.13
+gunicorn==23.0.0
