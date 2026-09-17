@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ app_name }} — Agricultural Decision-Support Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-mark">🌾</span>
+      <div class="brand-text">
+        <span class="brand-name">AgriSense AI</span>
+        <span class="brand-tag">AP &amp; Telangana Farm Intelligence</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-section="dashboard"><span class="nav-icon">⌂</span>Dashboard</button>
+      <button class="nav-item" data-section="location"><span class="nav-icon">⚲</span>Farm Location</button>
+      <button class="nav-item" data-section="current-farm"><span class="nav-icon">🌿</span>Current Farm</button>
+      <button class="nav-item" data-section="soil-environment"><span class="nav-icon">◈</span>Soil &amp; Environment</button>
+      <button class="nav-item" data-section="recommendation"><span class="nav-icon">✓</span>Crop Recommendation</button>
+      <button class="nav-item" data-section="yield"><span class="nav-icon">▲</span>Yield Prediction</button>
+      <button class="nav-item" data-section="comparison"><span class="nav-icon">⇄</span>Crop Comparison</button>
+      <button class="nav-item" data-section="crop-directory"><span class="nav-icon">📋</span>Crop Directory</button>
+      <button class="nav-item" data-section="weather"><span class="nav-icon">☁</span>Weather &amp; Climate</button>
+      <button class="nav-item" data-section="insights"><span class="nav-icon">◉</span>Farm Insights &amp; Risk</button>
+      <button class="nav-item" data-section="my-farm"><span class="nav-icon">💾</span>My Farm</button>
+      <button class="nav-item" data-section="history"><span class="nav-icon">☰</span>Prediction History</button>
+      <button class="nav-item" data-section="about"><span class="nav-icon">ℹ</span>About &amp; Methodology</button>
+    </nav>
+    <div class="sidebar-footer">
+      <span id="modelStatusDot" class="status-dot status-dot--unknown"></span>
+      <span id="modelStatusText">Checking models…</span>
+    </div>
+  </aside>
+
+  <!-- Mobile top bar -->
+  <div class="mobile-topbar">
+    <button id="mobileMenuBtn" class="mobile-menu-btn" aria-label="Open menu">☰</button>
+    <span class="brand-mark">🌾</span>
+    <span class="brand-name">CropWise</span>
+  </div>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- ============ DASHBOARD SECTION ============ -->
+    <section class="page active" id="page-dashboard">
+      <header class="page-header">
+        <h1>Farm Dashboard</h1>
+        <p class="page-subtitle">Your farm's current recommendation at a glance.</p>
+      </header>
+
+      <div id="dashboardEmpty" class="empty-state hero-empty">
+        <div class="empty-icon">🌾</div>
+        <h3>Smarter agricultural decisions, powered by real data.</h3>
+        <p>Combine location, weather, soil, and a validated crop model — with honest limits shown, not hidden.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary btn-large" data-goto="location">🌱 Plan My Crop</button>
+          <button class="btn btn-secondary btn-large" data-goto="current-farm">🌿 Analyze Current Farm</button>
+        </div>
+        <div class="hero-feature-grid">
+          <div class="hero-feature">🌱<span>Crop Recommendation</span></div>
+          <div class="hero-feature">📊<span>Yield Estimation</span></div>
+          <div class="hero-feature">🌦<span>Weather Intelligence</span></div>
+          <div class="hero-feature">🧪<span>Soil Intelligence</span></div>
+          <div class="hero-feature">📈<span>Crop Comparison</span></div>
+          <div class="hero-feature">🔍<span>Explainable Results</span></div>
+        </div>
+      </div>
+
+      <div id="dashboardContent" class="hidden">
+        <div class="grid grid-4 dashboard-stats">
+          <div class="stat-card stat-card--accent">
+            <span class="stat-label">Recommended Crop</span>
+            <span class="stat-value" id="dashCrop">—</span>
+            <span class="stat-icon" id="dashCropIcon">🌾</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Suitability</span>
+            <span class="stat-value" id="dashSuitability">—</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Estimated Yield</span>
+            <span class="stat-value" id="dashYield">—</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Farm Production</span>
+            <span class="stat-value" id="dashProduction">—</span>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Location</h3>
+            <p id="dashLocationName" class="muted">—</p>
+            <p class="small-muted" id="dashCoords">—</p>
+          </div>
+          <div class="card">
+            <h3>Data Confidence</h3>
+            <div class="confidence-badge" id="dashConfidenceBadge">—</div>
+            <p class="small-muted">Reflects how much of your input was measured vs. estimated.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Weather Summary</h3>
+            <div id="dashWeatherSummary" class="summary-list">—</div>
+          </div>
+          <div class="card">
+            <h3>Soil Summary</h3>
+            <div id="dashSoilSummary" class="summary-list">—</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Top Alternative Crops</h3>
+          <div id="dashAlternatives" class="alt-crop-list">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FARM LOCATION SECTION ============ -->
+    <section class="page" id="page-location">
+      <header class="page-header">
+        <h1>Farm Location</h1>
+        <p class="page-subtitle">Tell us where your farm is. This is the only thing every mode requires.</p>
+      </header>
+
+      <div class="mode-tabs">
+        <button class="mode-tab" data-mode="quick">Quick <span class="mode-tab-sub">Location only</span></button>
+        <button class="mode-tab active" data-mode="assisted">Smart Assisted <span class="mode-tab-sub">Default — auto-fill + edit</span></button>
+        <button class="mode-tab" data-mode="expert">Expert / Soil Test <span class="mode-tab-sub">Full manual entry</span></button>
+      </div>
+
+      <div class="grid grid-2 location-grid">
+        <div class="card">
+          <h3>Search for your location</h3>
+          <div class="search-row">
+            <input type="text" id="locationSearchInput" placeholder="Search village, town, or district…" autocomplete="off">
+            <button class="btn btn-primary" id="locationSearchBtn">Search</button>
+          </div>
+          <div id="locationSearchResults" class="search-results"></div>
+
+          <div class="divider"><span>or</span></div>
+
+          <button class="btn btn-secondary btn-block" id="useCurrentLocationBtn">
+            <span class="btn-icon">◎</span> Use my current location
+          </button>
+          <div id="locationConfirmBox" class="location-confirm hidden">
+            <p id="locationConfirmText">—</p>
+            <div class="confirm-btn-row">
+              <button class="btn btn-primary" id="confirmLocationYes">Yes, that's correct</button>
+              <button class="btn btn-secondary" id="confirmLocationNo">Select manually instead</button>
+            </div>
+          </div>
+
+          <div class="divider"><span>or select state &amp; district</span></div>
+          <div class="coord-row">
+            <select id="stateSelect"><option value="">Select state…</option></select>
+            <select id="districtSelect"><option value="">Select district…</option></select>
+          </div>
+          <p class="small-muted">Full district lists are maintained for Andhra Pradesh and Telangana. Other states use their state centroid as an approximate location.</p>
+
+          <div class="divider"><span>or enter coordinates</span></div>
+          <div class="coord-row">
+            <input type="number" id="latInput" placeholder="Latitude" step="0.0001">
+            <input type="number" id="lonInput" placeholder="Longitude" step="0.0001">
+            <button class="btn btn-secondary" id="useCoordsBtn">Set</button>
+          </div>
+
+          <div id="selectedLocationBox" class="selected-location hidden">
+            <strong id="selectedLocationName">—</strong>
+            <span id="selectedLocationCoords" class="small-muted">—</span>
+            <span id="selectedLocationElevation" class="small-muted">—</span>
+          </div>
+        </div>
+
+        <div class="card map-card">
+          <h3>Or select on the map</h3>
+          <div id="locationMap" class="map-container"></div>
+          <p class="small-muted">Click anywhere on the map to drop a pin.</p>
+        </div>
+      </div>
+
+      <!-- Assisted / Expert manual fields -->
+      <div class="card hidden" id="manualFieldsCard">
+        <h3 id="manualFieldsTitle">Refine your values</h3>
+        <p class="small-muted" id="manualFieldsSubtitle">Auto-filled where possible. Override anything you know more precisely.</p>
+        <div class="field-grid" id="manualFieldsGrid"><!-- populated by JS --></div>
+      </div>
+
+      <div class="card">
+        <h3>Farm details</h3>
+        <div class="field-grid">
+          <div class="field">
+            <label for="farmAreaInput">Farm area (hectares)</label>
+            <input type="number" id="farmAreaInput" value="1" min="0.01" step="0.1">
+          </div>
+          <div class="field">
+            <label for="irrigationSelect">Irrigation availability</label>
+            <select id="irrigationSelect">
+              <option value="none">None (rainfed)</option>
+              <option value="partial" selected>Partial</option>
+              <option value="full">Full irrigation</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="soilTypeInput">Soil type (optional)</label>
+            <input type="text" id="soilTypeInput" placeholder="e.g., loamy, clay, sandy">
+          </div>
+          <div class="field">
+            <label for="seasonInput">Growing season (optional)</label>
+            <input type="text" id="seasonInput" placeholder="e.g., Kharif, Rabi">
+          </div>
+          <div class="field">
+            <label for="prevCropInput">Previous crop (optional)</label>
+            <input type="text" id="prevCropInput" placeholder="e.g., wheat">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Soil test (optional)</h3>
+        <p class="small-muted">No soil test? That's fine — leave this blank and location-based estimates will be used instead, clearly labeled as estimates.</p>
+        <div class="mode-tabs soil-input-tabs">
+          <button class="mode-tab active" data-soil-tab="manual">Enter values manually</button>
+          <button class="mode-tab" data-soil-tab="upload">Upload a soil report</button>
+        </div>
+        <div id="soilManualPanel" class="field-grid" style="margin-top:14px;"><!-- populated by JS --></div>
+        <div id="soilUploadPanel" class="hidden" style="margin-top:14px;">
+          <input type="file" id="soilFileInput" accept=".pdf,.png,.jpg,.jpeg">
+          <button class="btn btn-secondary" id="soilUploadBtn">Extract values</button>
+          <div id="soilExtractResult" class="small-muted" style="margin-top:10px;"></div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-large" id="runPredictionBtn">Analyze My Farm</button>
+      <div id="analyzingStatus" class="analyzing-status hidden">
+        <span class="spinner"></span> Analyzing your farm environment…
+      </div>
+      <div id="predictionError" class="error-box hidden"></div>
+    </section>
+
+    <!-- ============ CURRENT FARM MODE SECTION ============ -->
+    <section class="page" id="page-current-farm">
+      <header class="page-header">
+        <h1>Current Farm Mode</h1>
+        <p class="page-subtitle">"I already have a crop planted — help me understand my current situation."</p>
+      </header>
+
+      <div class="card">
+        <h3>Your current crop</h3>
+        <div class="field-grid">
+          <div class="field">
+            <label for="currentCropSelect">Current crop</label>
+            <select id="currentCropSelect"><option value="">Loading crops…</option></select>
+          </div>
+          <div class="field">
+            <label for="cropStageInput">Crop stage (optional)</label>
+            <input type="text" id="cropStageInput" placeholder="e.g., flowering, vegetative">
+          </div>
+          <div class="field">
+            <label for="cfAreaInput">Farm area (hectares)</label>
+            <input type="number" id="cfAreaInput" value="1" min="0.01" step="0.1">
+          </div>
+          <div class="field">
+            <label for="cfIrrigationSelect">Irrigation availability</label>
+            <select id="cfIrrigationSelect">
+              <option value="none">None (rainfed)</option>
+              <option value="partial" selected>Partial</option>
+              <option value="full">Full irrigation</option>
+            </select>
+          </div>
+        </div>
+        <p class="small-muted" id="currentCropWarning"></p>
+      </div>
+
+      <div class="card">
+        <h3>Location</h3>
+        <p class="small-muted">Uses the location set in Farm Location. <button class="btn btn-secondary" data-goto="location" style="margin-left:8px;">Change location</button></p>
+        <p id="cfLocationDisplay" class="muted">No location set yet.</p>
+      </div>
+
+      <button class="btn btn-primary btn-large" id="analyzeCurrentFarmBtn">Analyze Current Situation</button>
+      <div id="cfAnalyzingStatus" class="analyzing-status hidden"><span class="spinner"></span> Analyzing your current farm…</div>
+      <div id="cfError" class="error-box hidden"></div>
+
+      <div id="cfResults" class="hidden">
+        <div class="grid grid-4 dashboard-stats" id="cfStats"></div>
+        <div class="card">
+          <h3>Situation summary</h3>
+          <p id="cfMessage" class="muted">—</p>
+        </div>
+        <div class="card">
+          <h3>Insights</h3>
+          <div id="cfInsights" class="insights-list"></div>
+        </div>
+        <div class="card">
+          <h3>Risk assessment</h3>
+          <div id="cfRisks" class="risk-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SOIL & ENVIRONMENT SECTION ============ -->
+    <section class="page" id="page-soil-environment">
+      <header class="page-header">
+        <h1>Soil &amp; Environment Profile</h1>
+        <p class="page-subtitle">Every value below is labeled with its source and confidence — never guesswork disguised as fact.</p>
+      </header>
+      <div id="soilEnvEmpty" class="empty-state">
+        <div class="empty-icon">◈</div>
+        <h3>No profile yet</h3>
+        <p>Run an analysis from Farm Location first.</p>
+        <button class="btn btn-primary" data-goto="location">Go to Farm Location</button>
+      </div>
+      <div id="soilEnvContent" class="hidden">
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Soil Profile</h3>
+            <div id="soilProfileList" class="profile-param-list">—</div>
+          </div>
+          <div class="card">
+            <h3>Climate Profile</h3>
+            <div id="climateProfileList" class="profile-param-list">—</div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Estimated Soil Type</h3>
+          <p id="soilTypeEstimate" class="muted">—</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CROP RECOMMENDATION SECTION ============ -->
+    <section class="page" id="page-recommendation">
+      <header class="page-header">
+        <h1>Crop Recommendation</h1>
+        <p class="page-subtitle">Ranked by model-predicted suitability for your farm's conditions.</p>
+      </header>
+      <div id="recEmpty" class="empty-state">
+        <div class="empty-icon">✓</div>
+        <h3>No recommendation yet</h3>
+        <p>Run an analysis from Farm Location first.</p>
+        <button class="btn btn-primary" data-goto="location">Go to Farm Location</button>
+      </div>
+      <div id="recContent" class="hidden">
+        <div id="rankedCropList" class="ranked-crop-list"></div>
+
+        <div class="card">
+          <h3>Why this crop?</h3>
+          <div id="whyThisCrop"></div>
+        </div>
+
+        <div class="card">
+          <h3>What the model weighs most</h3>
+          <div id="featureImportanceChart" class="feature-importance-chart"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ YIELD PREDICTION SECTION ============ -->
+    <section class="page" id="page-yield">
+      <header class="page-header">
+        <h1>Yield Prediction</h1>
+        <p class="page-subtitle">Model-based yield estimate — not a field-validated real-world measurement.</p>
+      </header>
+      <div id="yieldEmpty" class="empty-state">
+        <div class="empty-icon">▲</div>
+        <h3>No yield estimate yet</h3>
+        <p>Run an analysis from Farm Location first.</p>
+        <button class="btn btn-primary" data-goto="location">Go to Farm Location</button>
+      </div>
+      <div id="yieldContent" class="hidden">
+        <div class="grid grid-4 dashboard-stats">
+          <div class="stat-card">
+            <span class="stat-label">Crop</span>
+            <span class="stat-value" id="yieldCrop">—</span>
+          </div>
+          <div class="stat-card stat-card--accent">
+            <span class="stat-label">Estimated Yield</span>
+            <span class="stat-value" id="yieldValue">—</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Farm Area</span>
+            <span class="stat-value" id="yieldArea">—</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Total Production</span>
+            <span class="stat-value" id="yieldTotal">—</span>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Defensible Yield Range</h3>
+          <div id="yieldRangeBar" class="yield-range-bar"></div>
+        </div>
+        <div class="card">
+          <h3>Irrigation Effect</h3>
+          <p id="irrigationEffect" class="muted">—</p>
+        </div>
+        <div class="notice-box">
+          <strong>Model-based yield estimate.</strong> This figure comes from a documented synthetic/estimated model, not a scientifically validated real-world yield dataset. Use it for general guidance only.
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CROP COMPARISON SECTION ============ -->
+    <section class="page" id="page-comparison">
+      <header class="page-header">
+        <h1>Crop Comparison</h1>
+        <p class="page-subtitle">Compare your top recommended crops side by side.</p>
+      </header>
+      <div id="comparisonEmpty" class="empty-state">
+        <div class="empty-icon">⇄</div>
+        <h3>Nothing to compare yet</h3>
+        <p>Run an analysis from Farm Location first.</p>
+        <button class="btn btn-primary" data-goto="location">Go to Farm Location</button>
+      </div>
+      <div id="comparisonContent" class="hidden">
+        <div class="table-wrap">
+          <table class="comparison-table" id="comparisonTable"></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ WEATHER & CLIMATE SECTION ============ -->
+    <section class="page" id="page-weather">
+      <header class="page-header">
+        <h1>Weather &amp; Climate</h1>
+        <p class="page-subtitle">Live conditions and a 7-day outlook for your farm location.</p>
+      </header>
+      <div id="weatherEmpty" class="empty-state">
+        <div class="empty-icon">☁</div>
+        <h3>No weather data yet</h3>
+        <p>Set a farm location first.</p>
+        <button class="btn btn-primary" data-goto="location">Go to Farm Location</button>
+      </div>
+      <div id="weatherContent" class="hidden">
+        <div class="grid grid-4 dashboard-stats" id="weatherCurrentStats"></div>
+        <div class="card">
+          <h3>7-Day Outlook</h3>
+          <div id="weatherForecastChart" class="forecast-chart"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FARM INSIGHTS SECTION ============ -->
+    <section class="page" id="page-insights">
+      <header class="page-header">
+        <h1>Farm Insights</h1>
+        <p class="page-subtitle">Actionable indicators based on your latest analysis — recommendations, not guarantees.</p>
+      </header>
+      <div id="insightsEmpty" class="empty-state">
+        <div class="empty-icon">◉</div>
+        <h3>No insights yet</h3>
+        <p>Run an analysis from Farm Location first.</p>
+        <button class="btn btn-primary" data-goto="location">Go to Farm Location</button>
+      </div>
+      <div id="insightsContent" class="hidden">
+        <div id="insightsList" class="insights-list"></div>
+        <div class="card">
+          <h3>Risk Assessment</h3>
+          <p class="small-muted">Rule-based indicators, not a calibrated failure probability. Each rule is documented in About &amp; Methodology.</p>
+          <div id="riskList" class="risk-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CROP DIRECTORY SECTION ============ -->
+    <section class="page" id="page-crop-directory">
+      <header class="page-header">
+        <h1>Crop Directory</h1>
+        <p class="page-subtitle">Every crop this system knows about, and whether it has validated data coverage — including the ones it honestly doesn't.</p>
+      </header>
+      <div class="crop-directory-filters">
+        <button class="btn btn-secondary crop-filter active" data-filter="all">All crops</button>
+        <button class="btn btn-secondary crop-filter" data-filter="supported">Supported</button>
+        <button class="btn btn-secondary crop-filter" data-filter="unsupported">Data unavailable</button>
+      </div>
+      <div id="cropDirectoryGrid" class="crop-directory-grid"></div>
+    </section>
+
+    <!-- ============ MY FARM SECTION ============ -->
+    <section class="page" id="page-my-farm">
+      <header class="page-header">
+        <h1>My Farm</h1>
+        <p class="page-subtitle">Optionally save your farm details locally so you don't have to re-enter them next time. Nothing here is required to use AgriSense AI.</p>
+      </header>
+      <div class="card">
+        <h3>Saved profile</h3>
+        <div id="myFarmDisplay" class="muted">No saved farm profile yet.</div>
+        <div class="history-toolbar" style="margin-top:14px;">
+          <button class="btn btn-primary" id="saveFarmProfileBtn">Save current farm as My Farm</button>
+          <button class="btn btn-danger" id="deleteFarmProfileBtn">Delete saved profile</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PREDICTION HISTORY SECTION ============ -->
+    <section class="page" id="page-history">
+      <header class="page-header">
+        <h1>Prediction History</h1>
+        <p class="page-subtitle">Your recent farm analyses, stored locally on this device.</p>
+      </header>
+      <div class="history-toolbar">
+        <button class="btn btn-secondary" id="refreshHistoryBtn">Refresh</button>
+        <button class="btn btn-danger" id="clearHistoryBtn">Clear all history</button>
+      </div>
+      <div id="historyEmpty" class="empty-state">
+        <div class="empty-icon">☰</div>
+        <h3>No history yet</h3>
+        <p>Predictions you run will appear here.</p>
+      </div>
+      <div id="historyList" class="history-list"></div>
+    </section>
+
+    <!-- ============ ABOUT / METHODOLOGY SECTION ============ -->
+    <section class="page" id="page-about">
+      <header class="page-header">
+        <h1>About &amp; Methodology</h1>
+        <p class="page-subtitle">How CropWise works, and where its limits are.</p>
+      </header>
+
+      <div class="card">
+        <h3>What AgriSense AI does</h3>
+        <p>AgriSense AI combines a machine-learning crop suitability model with location-based environmental data, live/forecast weather, and optional soil-test information to help farmers in Andhra Pradesh and Telangana think through crop choice and expected yield. It is a decision-support tool, not a replacement for agronomic expertise, government advisories, or laboratory soil testing.</p>
+      </div>
+
+      <div class="card">
+        <h3>Crop coverage — including what's honestly missing</h3>
+        <p>The recommendation and yield models are trained on the public Crop Recommendation Dataset (~2,200 rows, 22 crops). That dataset includes <strong>Rice, Maize, and Cotton</strong> from this project's priority-crop list, plus 19 other crops (pulses, fruits, plantation crops).</p>
+        <p><strong>It does not include Chilli, Tobacco, Wheat, Sugarcane, Turmeric, or Groundnut</strong> — all economically important crops in Andhra Pradesh and Telangana. Rather than approximating these with a similar crop or fabricating plausible numbers, AgriSense AI explicitly marks them "data unavailable" everywhere they'd otherwise appear (see the Crop Directory page). Real government production statistics for these crops exist (Directorate of Economics & Statistics, data.gov.in, ICRISAT district-level data) but have not yet been integrated into a validated model in this version — see Limitations below.</p>
+      </div>
+
+      <div class="card">
+        <h3>The crop recommendation model</h3>
+        <p>A RandomForestClassifier trained on Nitrogen, Phosphorus, Potassium, temperature, humidity, soil pH, and rainfall, achieving 99.2% accuracy on a held-out test split of the training dataset. This accuracy reflects how well the model separates the 22 crops it was trained on — it is not a claim about real-world farm outcomes.</p>
+      </div>
+
+      <div class="card">
+        <h3>The yield estimation model</h3>
+        <p><strong>This is a documented synthetic/estimated model, not a field-validated real-world yield dataset.</strong> No verified, freely redistributable dataset pairing these exact features with real recorded yields was available in this project's timeframe, so the yield model is trained on reference average yields per crop, scaled by how closely input conditions match that crop's statistical comfort zone, with an irrigation adjustment. Treat yield figures as general guidance only, for the 22 crops the model supports.</p>
+      </div>
+
+      <div class="card">
+        <h3>Soil intelligence &amp; provenance</h3>
+        <p>Soil information can come from three places, and every value shown carries its provenance:</p>
+        <ul>
+          <li><strong>USER_ENTERED</strong> — you typed a real soil-test value (e.g. from a Soil Health Card).</li>
+          <li><strong>DOCUMENT_EXTRACTED</strong> — pulled from an uploaded report; always shown for your confirmation before use, never auto-trusted.</li>
+          <li><strong>ESTIMATED / EXTERNAL</strong> — pH from SoilGrids/ISRIC (modeled, not measured) where available.</li>
+          <li><strong>FALLBACK</strong> — a regional/climatic-zone estimate used only when nothing better is available.</li>
+        </ul>
+        <p>Nitrogen, Phosphorus, and Potassium cannot be reliably retrieved from any free global API at field precision — GPS location alone can never directly measure your soil's exact N/P/K or pH. If no soil test is available, the system says so plainly rather than inventing one.</p>
+      </div>
+
+      <div class="card">
+        <h3>Weather &amp; climate data</h3>
+        <p>Live conditions and 7-day forecasts come from Open-Meteo, a free public weather API. Climate averages use a recent 90-day archive as a practical proxy for typical conditions.</p>
+      </div>
+
+      <div class="card">
+        <h3>Risk assessment methodology</h3>
+        <p>Risk labels (Low / Moderate / High / Data unavailable) come from documented, inspectable rules comparing forecast rainfall/temperature against fixed thresholds — not a calibrated probability-of-failure model. Each risk item states the exact rule that produced it.</p>
+      </div>
+
+      <div class="card">
+        <h3>Regional data reality check</h3>
+        <p>Andhra Pradesh/Telangana district-level government crop statistics (Directorate of Economics &amp; Statistics, data.gov.in, ICRISAT District Level Data) were researched for this project and are real, legitimate, well-documented sources — but they are distributed through interactive query portals rather than simple bulk downloads, and integrating them into a harmonized, leakage-free, time-aware training pipeline is a substantial data-engineering effort beyond this version's scope. This version does not fabricate a regional-evidence layer to compensate; it is listed under Limitations and Future Work instead.</p>
+      </div>
+
+      <div class="card">
+        <h3>Data quality vs. ML accuracy</h3>
+        <p>"Data confidence" reflects how much of your input was measured, retrieved, or estimated — it says nothing about the ML model's own accuracy. A high-confidence input can still receive a lower-suitability recommendation, and vice versa.</p>
+      </div>
+
+      <div class="card">
+        <h3>Model information</h3>
+        <div id="modelInfoBox" class="muted">Loading model information…</div>
+      </div>
+
+      <div class="notice-box">
+        AgriSense AI never claims a "guaranteed best crop," an "exact yield," a calibrated failure probability, or that GPS has "measured your soil." Always confirm important decisions with local agricultural extension services and, where possible, an actual soil test.
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/geography.js') }}"></script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+<script src="{{ url_for('static', filename='js/weather.js') }}"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/history.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/soil.js') }}"></script>
+<script src="{{ url_for('static', filename='js/crops.js') }}"></script>
+<script src="{{ url_for('static', filename='js/farm.js') }}"></script>
+<script src="{{ url_for('static', filename='js/current_farm.js') }}"></script>
+<script src="{{ url_for('static', filename='js/prediction.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# Environment / secrets
+.env
+
+# Caches
+models/cache/
+data/cache/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Data caches (regenerable)
+data/crop_dataset_cache.csv
+data/prediction_history.json

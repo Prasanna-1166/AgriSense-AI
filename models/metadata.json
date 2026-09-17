@@ -1,0 +1,45 @@
+{
+  "crop_model": {
+    "type": "RandomForestClassifier",
+    "features": [
+      "N",
+      "P",
+      "K",
+      "temperature",
+      "humidity",
+      "ph",
+      "rainfall"
+    ],
+    "training_timestamp": "2026-09-12T01:46:23.871583+00:00",
+    "dataset_size": 1935,
+    "dataset_full": true,
+    "dataset_source": "online",
+    "accuracy": 0.9922,
+    "random_seed": 42,
+    "training_time_seconds": 0.9,
+    "notes": "Trained on the public Crop Recommendation Dataset (N, P, K, temperature, humidity, pH, rainfall -> crop label)."
+  },
+  "last_updated": "2026-09-12T01:46:30.176360+00:00",
+  "yield_model": {
+    "type": "RandomForestRegressor",
+    "features": [
+      "N",
+      "P",
+      "K",
+      "temperature",
+      "humidity",
+      "ph",
+      "rainfall",
+      "crop_index",
+      "irrigation"
+    ],
+    "training_timestamp": "2026-09-12T01:46:30.176360+00:00",
+    "dataset_size": 3520,
+    "r2_score": 0.9996,
+    "mae": 0.0656,
+    "random_seed": 42,
+    "training_time_seconds": 3.6,
+    "notes": "DOCUMENTED SYNTHETIC/ESTIMATED yield model. Trained on reference average yields scaled by how closely input conditions match each crop's statistical comfort zone, plus an irrigation adjustment. NOT a field-validated real-world yield dataset.",
+    "limitation": "This is an estimate for general guidance only, not a scientifically validated real-world yield prediction."
+  }
+}
