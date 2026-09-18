@@ -192,6 +192,9 @@ const CropWisePrediction = {
     this.renderSoilEnvironment(data);
     this.renderRecommendation(data);
     this.renderYield(data);
+    if (window.CropWiseCropPlan) {
+      window.CropWiseCropPlan.loadForTopCrop(data);
+    }
     if (window.CropWiseCharts) {
       window.CropWiseCharts.renderComparison(data);
     }

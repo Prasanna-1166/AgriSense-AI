@@ -96,7 +96,95 @@ access), `ml/preprocessing.py` and `config/crop_master.py` are structured
 so that a genuine Phase 2/3 data-harmonization pass could integrate them
 without an architecture rewrite.
 
-## 7. What this system never does with data
+## 7. Crop agronomy & economics data (Crop Plan Layer)
+
+`config/crop_agronomy_data.py` is the single source of truth for seed/
+planting-material requirement, crop duration, fertilizer recommendation,
+and plant-protection guidance shown on the Crop Plan & Economics page.
+Every value carries a `status` (`VERIFIED_SOURCE`, `SOURCE_ESTIMATE`, or
+`UNAVAILABLE`) and, when verified, a named source. `SOURCE_ESTIMATE` is
+used only for a value transparently *derived* from a verified figure via
+documented arithmetic (e.g. a per-tree fertilizer dose x an assumed
+planting density to get kg/ha) - it is always accompanied by a note
+explaining the derivation. No value in this file is an average, a guess,
+or borrowed from a "similar" crop without saying so.
+
+| Crop | Fields with a verified/derived source | Source |
+|---|---|---|
+| Rice | Duration, seed rate, N/P/K/Zn fertilizer dose, plant protection (stem borer, BPH, blast, sheath blight) | RARS Tirupati (ANGRAU), *Recommendations for Rice Crop Production, Kharif 2014 & Rabi 2014-15* |
+| Maize | Duration, seed rate, N/P/K/Zn fertilizer dose, plant protection (stem borer, leaf blight) | RARS Tirupati (ANGRAU), *Maize - Package of Practices* |
+| Cotton | Seed rate, N/P/K fertilizer dose (rainfed baseline) | ICAR-CICR fertilizer recommendation; Tractor Junction (seed-rate figures, 2025) |
+| Chickpea (Bengalgram) | Seed rate, N/P/S fertilizer dose, plant protection (pod borer, wilt) | RARS Tirupati (ANGRAU), *Package of Practices - Pulses* |
+| Blackgram | Seed rate, N/P fertilizer dose, plant protection (Maruca, YMV) | RARS Tirupati (ANGRAU), *Package of Practices - Pulses* |
+| Mungbean (Greengram) | Seed rate | RARS Tirupati (ANGRAU), *Package of Practices - Pulses* (fertilizer/plant-protection explicitly documented as "similar to blackgram" in the source, not independently restated) |
+| Pigeonpeas (Redgram) | Seed rate, N/P fertilizer dose, plant protection (pod borer, wilt) | RARS Tirupati (ANGRAU), *Package of Practices - Pulses* |
+| Mango | Planting density (100 grafts/ha), N/P/K fertilizer (per-tree verified, per-ha derived) | ICAR-CCARI Goa (spacing); TNAU *Fertilizer Schedule for Fruit Crops* |
+| Banana | Planting density (estimate), N/P/K fertilizer (per-plant verified, per-ha derived) | TNAU Banana Cultivation; TNAU *Fertilizer Schedule for Fruit Crops* |
+| Coconut | Planting density (175 palms/ha), N/P2O5/K2O fertilizer (per-palm verified, per-ha derived), organic manure | ICAR-CPCRI |
+| Orange (sweet orange) | N/P2O5/K2O fertilizer (per-tree only - no verified spacing to convert to per-ha) | TNAU *Fertilizer Schedule for Fruit Crops* |
+| Grapes | N/P/K fertilizer, Thompson Seedless, 3-year progression (per-vine only) | TNAU *Fertilizer Schedule for Fruit Crops* |
+| Papaya | N/P/K fertilizer (per-plant, per-application - not annualized) | TNAU *Fertilizer Schedule for Fruit Crops* |
+| Pomegranate | N/P/K fertilizer, age-scaled (per-plant only) | TNAU *Fertilizer Schedule for Fruit Crops* |
+| Apple | N/P/K fertilizer (per-tree only; not AP/Telangana-relevant) | TNAU *Fertilizer Schedule for Fruit Crops* |
+| Jute | Duration (100-120 days), seed rate, N/P2O5/K2O (2003-04 national average use, not a current recommendation) | ICAR-CRIJAF (Ghorai & Chakraborty, 2020); FAO fertilizer-use statistics |
+| Lentil | N/P/S fertilizer dose | Directorate of Pulses Development (Govt. of India) / ICAR-IIPR |
+
+**Crops with NO verified agronomy data in this release:** coffee,
+kidneybeans, mothbeans, muskmelon, watermelon. These return
+`has_agronomy_data: false` and an honest "unavailable" status from
+`/api/crop-plan/<crop_id>` rather than a fabricated figure. This is a
+real, current gap - the same anti-fabrication policy as the ML crop
+coverage gap in §1, applied to agronomic reference data.
+
+**Per-plant vs. per-hectare figures for tree/vine/perennial crops.**
+Institutional sources for perennial crops (mango, banana, coconut,
+orange, grapes, papaya, pomegranate, apple) give doses **per tree/vine/
+plant**, not per hectare - a farm's per-hectare total depends on
+planting density, which varies by variety and system. Where a specific,
+sourced planting density exists (mango, banana, coconut), the per-ha
+figure is calculated and tagged `SOURCE_ESTIMATE` with a note explaining
+the derivation - it is not an independently sourced per-ha figure.
+Where no reliable density source was found (orange, grapes, papaya,
+pomegranate, apple), the per-plant dose is shown as `VERIFIED_SOURCE`
+with `quantity_per_ha` left `null` rather than guessing a density -
+farmers can multiply by their own actual tree/vine count.
+
+**Cost data (seed/fertilizer/labour/etc. prices in INR): now available for
+3 crops as real, dated, sourced SURVEY totals — rice, maize, cotton.**
+Rather than build a bottom-up per-input price list (no verified current
+AP/Telangana unit prices were found), the app instead surfaces a real,
+published **cost-of-cultivation survey total** for these three crops:
+
+| Crop | Total cost/ha | Region | Year | Source |
+|---|---|---|---|---|
+| Rice | ₹66,985 | Bhoopalpalli district, Telangana | TE 2021-22 | Peer-reviewed study using official CACP plot-level data |
+| Maize | ₹64,448 (Cost A2+FL) | Telangana (state-wise) | TE 2021-22 | Peer-reviewed study using official CACP survey data |
+| Cotton | ₹1,62,020 | Andhra Pradesh (state-level) | 2023-24 | ANGRAU official Cotton Outlook Report |
+
+These are surfaced via `economics.surveyed_total` in
+`/api/crop-plan/<crop_id>` and are **never added to** the itemized
+seed/fertilizer components list (which stays unpriced) - the survey total
+already includes seed, fertilizer, labour, machinery and irrigation
+costs per its own methodology, so summing the two would double-count.
+Each entry states its exact cost concept (e.g. CACP's "Cost A2+FL" vs. a
+comprehensive total), region, and year, because these figures are NOT
+interchangeable or stable - e.g. the cotton figure reflects a specific,
+reportedly loss-making 2023-24 season, and the rice figure is a single
+district, not a state average. All 3 remaining ML-supported crops with
+seed/fertilizer data (chickpea, blackgram, mungbean, pigeonpeas) and
+every crop added in this update do NOT have a surveyed total - their
+`economics.surveyed_total` is `null` and the itemized components stay
+`UNAVAILABLE`, honestly, rather than estimated.
+
+**Plant protection guidance is intentionally conservative.** It is only
+included where a named agricultural-university or ICAR source gives a
+specific target pest/disease, active ingredient, and rate. Only rice and
+the four RARS Tirupati pulses (chickpea, blackgram, pigeonpeas; mungbean
+by explicit cross-reference) have this in this release - every other
+crop, including the newly-added tree/vine crops and jute/lentil, is
+honestly marked unavailable rather than given a generic pesticide list.
+
+## 8. What this system never does with data
 
 - Never invents a crop-specific number (yield, production, price) that
   isn't derived from one of the above sources.
@@ -106,3 +194,6 @@ without an architecture rewrite.
   or SoilGrids-modeled estimate.
 - Never reports weather as available when the external API call failed —
   fallback status is always shown.
+- Never shows a seed/fertilizer/planting-material figure, crop duration, or
+  cost total in the Crop Plan & Economics page without a named, dated
+  source - see §7. Missing data is shown as "unavailable", never estimated.

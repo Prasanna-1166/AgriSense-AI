@@ -65,6 +65,20 @@ explanation for that specific crop.
 **GET `/api/crops/<crop_id>`** — Single crop's registry entry
 **POST `/api/crops/compare`** `{N, P, K, temperature, humidity, ph, rainfall, area_ha?, irrigation?, crops: [ids]}` — Compare specific crops; requesting an unsupported crop returns its reason instead of a fabricated comparison row
 
+## Crop Plan & Economics
+
+**GET `/api/crop-plan/<crop_id>?area_ha=<number>`** (`area_ha` optional, default 1.0)
+Returns duration, planting-material requirement, fertilizer recommendation,
+plant-protection guidance, and a cost breakdown for `crop_id`, scaled to
+`area_ha`. Every field carries a `status` of `VERIFIED_SOURCE` or
+`UNAVAILABLE` (never a silent fabrication) plus a `source` when verified.
+Works for any crop in the Crop Master registry, including ML-unsupported
+ones (`ml_recommendation_supported: false` + `ml_support_note` explains
+why, independent of whether agronomic reference data exists). Returns
+`404` for a crop id not in the Crop Master at all, and `400` for a
+non-numeric or non-positive `area_ha`. See `docs/data-sources.md` §7 for
+exactly which crops/fields have verified data today.
+
 ## Farm Profile (optional, local, no auth)
 
 **GET `/api/farm/profile`** / **POST `/api/farm/profile`** / **DELETE `/api/farm/profile`**

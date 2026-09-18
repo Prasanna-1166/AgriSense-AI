@@ -49,6 +49,7 @@ const CropWiseCrops = {
             </div>
             <p class="small-muted">${c.category} · ${c.observation_count_est} in training data</p>
             <p class="small-muted">Source: ${c.source}</p>
+            <button class="btn btn-secondary" data-crop-plan="${c.crop_id}" style="margin-top:8px;">View crop plan</button>
           </div>
         `;
       }
@@ -60,9 +61,20 @@ const CropWiseCrops = {
           </div>
           <p class="small-muted">${c.reason || ""}</p>
           <p class="small-muted">${c.real_world_data_note || ""}</p>
+          <button class="btn btn-secondary" data-crop-plan="${c.crop_id}" style="margin-top:8px;">View agronomic reference (if any)</button>
         </div>
       `;
     }).join("") || `<p class="small-muted">No crops match this filter.</p>`;
+
+    grid.querySelectorAll("[data-crop-plan]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const cropId = btn.dataset.cropPlan;
+        const areaHa = (CropWise.state.lastPrediction && CropWise.state.lastPrediction.farm &&
+          CropWise.state.lastPrediction.farm.area_ha) || 1.0;
+        if (window.CropWiseCropPlan) window.CropWiseCropPlan.load(cropId, areaHa);
+        CropWise.gotoSection("crop-plan");
+      });
+    });
   },
 
   async loadForCurrentFarmSelect() {

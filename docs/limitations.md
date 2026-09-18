@@ -14,6 +14,54 @@ include them. AgriSense AI marks these explicitly as `UNSUPPORTED` /
 Mode, comparison) rather than approximating them with a similar crop or
 fabricating numbers. This is a real, current gap - not a hidden one.
 
+## Crop Plan & Economics data is incomplete by design, not by oversight
+
+The Crop Plan & Economics page (`/api/crop-plan/<crop_id>`) has verified
+or transparently-derived agronomic data for **17 of the 22** ML-supported
+crops - see `data-sources.md` §7 for exactly which fields and sources per
+crop. The remaining 5 crops (coffee, kidneybeans, mothbeans, muskmelon,
+watermelon) show an honest "no agronomic reference data on file yet"
+rather than an invented figure. This mirrors, at the agronomy layer, the
+same crop-coverage gap already documented above for the ML model - it is
+disclosed, not hidden.
+
+**Per-hectare figures for tree/vine crops are estimates, not fresh
+sources, where shown at all.** Institutional sources give doses per
+tree/vine/plant. Where a sourced planting density exists (mango, banana,
+coconut) the per-hectare figure is a *derived* `SOURCE_ESTIMATE` -
+recompute it yourself if your actual planting density differs. Where no
+density source was found (orange, grapes, papaya, pomegranate, apple),
+only the per-plant dose is shown and no per-hectare total is
+calculated - multiply by your own tree/vine count.
+
+**Cost data now exists for 3 crops (rice, maize, cotton) as real, dated
+cost-of-cultivation SURVEY totals** - see `data-sources.md` §7 for the
+exact figures, regions, years, and cost concepts. These are NOT stable
+prices: the cotton figure (Andhra Pradesh, 2023-24) reflects a specific,
+reportedly loss-making season; the rice figure is a single Telangana
+district (Bhoopalpalli), not a state average; the maize figure uses a
+specific CACP cost concept (Cost A2+FL) that excludes land rental value.
+**19 of 22 crops still have no cost data at all** - no bottom-up
+per-input pricing (seed ₹/kg, fertilizer ₹/kg) exists for any crop in
+this release; only these 3 survey-level totals exist, and only for the
+one region/year each source reported.
+
+**Plant-protection guidance is deliberately narrow.** It is shown only
+where a named, dated agricultural-university/ICAR source gives a
+specific pest/disease, product, and rate (rice and the pulses have
+this; every other crop - including all the tree/vine crops, cotton,
+jute, and lentil - currently does not). This is a safety choice, not a
+data-completeness oversight - blanket pesticide recommendations were
+explicitly avoided per project requirements.
+
+**Several newly-added crops are not actually AP/Telangana crops.**
+Apple, grapes, and orange are grown mainly outside AP/Telangana (hill
+states, Maharashtra/Nagpur, etc.); jute is mainly an eastern-India crop;
+lentil is mainly a north/central-India rabi crop. Their agronomic data
+comes from national or other-state sources (mainly TNAU, Tamil Nadu) and
+is labeled as such - it is shown because these are ML-dataset crops, not
+because they are regionally relevant to this app's AP/Telangana focus.
+
 ## No real Indian government production/yield data is integrated
 
 `data-sources.md` §6 documents three real, legitimate sources

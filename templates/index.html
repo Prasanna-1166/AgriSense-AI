@@ -29,6 +29,7 @@
       <button class="nav-item" data-section="soil-environment"><span class="nav-icon">◈</span>Soil &amp; Environment</button>
       <button class="nav-item" data-section="recommendation"><span class="nav-icon">✓</span>Crop Recommendation</button>
       <button class="nav-item" data-section="yield"><span class="nav-icon">▲</span>Yield Prediction</button>
+      <button class="nav-item" data-section="crop-plan"><span class="nav-icon">🧾</span>Crop Plan &amp; Economics</button>
       <button class="nav-item" data-section="comparison"><span class="nav-icon">⇄</span>Crop Comparison</button>
       <button class="nav-item" data-section="crop-directory"><span class="nav-icon">📋</span>Crop Directory</button>
       <button class="nav-item" data-section="weather"><span class="nav-icon">☁</span>Weather &amp; Climate</button>
@@ -361,6 +362,7 @@
         <div class="card">
           <h3>Why this crop?</h3>
           <div id="whyThisCrop"></div>
+          <button class="btn btn-secondary" style="margin-top:12px;" data-goto="crop-plan">View seed, fertilizer &amp; cost plan →</button>
         </div>
 
         <div class="card">
@@ -412,6 +414,64 @@
         <div class="notice-box">
           <strong>Model-based yield estimate.</strong> This figure comes from a documented synthetic/estimated model, not a scientifically validated real-world yield dataset. Use it for general guidance only.
         </div>
+      </div>
+    </section>
+
+    <!-- ============ CROP PLAN & ECONOMICS SECTION ============ -->
+    <section class="page" id="page-crop-plan">
+      <header class="page-header">
+        <h1>Crop Plan &amp; Economics</h1>
+        <p class="page-subtitle">What it takes to grow your recommended crop — seed, fertilizer, duration and estimated cost.</p>
+      </header>
+      <div id="cropPlanEmpty" class="empty-state">
+        <div class="empty-icon">🧾</div>
+        <h3>No crop plan yet</h3>
+        <p>Run an analysis from Farm Location first.</p>
+        <button class="btn btn-primary" data-goto="location">Go to Farm Location</button>
+      </div>
+      <div id="cropPlanLoading" class="hidden small-muted">Loading crop plan…</div>
+      <div id="cropPlanContent" class="hidden">
+        <div class="card">
+          <h3 id="cropPlanTitle">—</h3>
+          <p class="small-muted" id="cropPlanRegionScope">—</p>
+          <p class="small-muted" id="cropPlanMlNote"></p>
+        </div>
+
+        <div class="card">
+          <h3>Crop Duration</h3>
+          <div id="cropPlanDuration">—</div>
+        </div>
+
+        <div class="card">
+          <h3>Seed / Planting Material Requirement</h3>
+          <div id="cropPlanSeed">—</div>
+        </div>
+
+        <div class="card">
+          <h3>Fertilizer Recommendation</h3>
+          <p class="small-muted" id="cropPlanFertilizerNote"></p>
+          <div id="cropPlanFertilizers">—</div>
+        </div>
+
+        <div class="card">
+          <h3>Plant Protection</h3>
+          <p class="small-muted" id="cropPlanPPDisclaimer"></p>
+          <div id="cropPlanPlantProtection">—</div>
+        </div>
+
+        <div class="card">
+          <h3>Estimated Cost of Cultivation</h3>
+          <div id="cropPlanCostSummary" class="grid grid-4 dashboard-stats"></div>
+          <div id="cropPlanCostTable" style="margin-top:14px;"></div>
+          <p class="small-muted" id="cropPlanCostNote"></p>
+        </div>
+
+        <div class="card">
+          <h3>Sources &amp; Data Confidence</h3>
+          <div id="cropPlanSources">—</div>
+        </div>
+
+        <div class="notice-box" id="cropPlanDisclaimer">—</div>
       </div>
     </section>
 
@@ -613,6 +673,7 @@
 <script src="{{ url_for('static', filename='js/crops.js') }}"></script>
 <script src="{{ url_for('static', filename='js/farm.js') }}"></script>
 <script src="{{ url_for('static', filename='js/current_farm.js') }}"></script>
+<script src="{{ url_for('static', filename='js/crop_plan.js') }}"></script>
 <script src="{{ url_for('static', filename='js/prediction.js') }}"></script>
 </body>
 </html>

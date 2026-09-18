@@ -40,6 +40,12 @@ transparency throughout.
 - **Yield estimation with range**, always labeled as a documented synthetic/estimated model
 - **Rule-based risk assessment** (rainfall/temperature/irrigation/data-availability), each with its exact triggering rule shown
 - **Crop comparison, weather & 7-day forecast, prediction history, optional local farm profile**
+- **Crop Plan & Economics**: seed/planting-material requirement, crop duration, fertilizer
+  recommendation, and plant-protection guidance for the recommended crop, scaled to your farm
+  area, each field tagged verified-source/derived-estimate/honestly-unavailable — see
+  `/api/crop-plan/<crop_id>` and `docs/data-sources.md` §7. For rice, maize and cotton, a real
+  published cost-of-cultivation survey total (₹/ha, with region/year/source) is also shown; other
+  crops show sourced input quantities with cost left unavailable rather than guessed.
 - **Never fabricates**: unsupported crops get an honest message, not a guess; every environmental value carries a source/status/confidence tag
 
 ## 3. Architecture
@@ -146,10 +152,11 @@ There is no live-updating agricultural dataset in this version — see
 ```powershell
 python -m pytest tests/ -v
 ```
-**64 tests**, including dedicated anti-fabrication checks (e.g.
+**95 tests**, including dedicated anti-fabrication checks (e.g.
 `test_supported_crops_match_trained_model_classes` fails loudly if the
 Crop Master registry and the actual trained model ever disagree about
-which crops are supported).
+which crops are supported, and `test_no_crop_has_a_fabricated_cost_total`
+for the Crop Plan & Economics layer).
 
 ## 15. API Reference
 

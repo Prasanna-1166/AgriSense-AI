@@ -53,6 +53,7 @@ def create_app():
     from routes.soil import soil_bp
     from routes.farm import farm_bp
     from routes.current_farm import current_farm_bp
+    from routes.crop_plan import crop_plan_bp
 
     app.register_blueprint(health_bp)
     app.register_blueprint(location_bp)
@@ -63,6 +64,7 @@ def create_app():
     app.register_blueprint(soil_bp)
     app.register_blueprint(farm_bp)
     app.register_blueprint(current_farm_bp)
+    app.register_blueprint(crop_plan_bp)
 
     # Frontend route
     @app.route("/")
